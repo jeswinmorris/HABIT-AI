@@ -7,6 +7,9 @@ const { app, BrowserWindow, session, ipcMain, Notification, shell, systemPrefere
 const path = require("path");
 const fs = require("fs");
 
+// Fix black screen on old Intel HD Graphics (2014 Mac)
+app.disableHardwareAcceleration();
+
 let win = null;
 app.disableHardwareAcceleration();
 let db = null;
@@ -20,11 +23,6 @@ if (!app.requestSingleInstanceLock()) {
 // Must be before ready
 app.commandLine.appendSwitch('enable-features', 'AudioWorklet');
 
-/**
- * habicore:// — read-only asset scheme used for the offline Vosk model + Piper voice files.
- * Must be registered before app ready. Without it the renderer (file:// in production, or
- * localhost in dev) cannot reach a model that lives in Resources/userData.
- */
 function registerCoreScheme() {
   try {
     protocol.registerSchemesAsPrivileged([
@@ -60,7 +58,6 @@ function handleCoreScheme() {
   });
 }
 
-/** First existing candidate path for the STT model / TTS voice files. */
 function findCoreFile(name) {
   for (const root of coreRoots()) {
     const p = path.join(root, name);
@@ -91,8 +88,7 @@ CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 `;
 
 function openDb() {
-  if (db || jsonFile) return; // already opened
-
+  if (db || jsonFile) return;
   const dir = app.getPath("userData");
   const file = path.join(dir, "habit.db");
   try {
@@ -101,7 +97,6 @@ function openDb() {
     db.pragma("journal_mode = WAL");
     db.exec(SCHEMA);
     console.log("[habit.db] SQLite:", file);
-    console.log("[habit.db] SQLite:", file); // keep your double log if you want
   } catch (err) {
     db = null;
     jsonFile = path.join(dir, "habit-store.json");
@@ -123,12 +118,7 @@ function unpackCollection(table, rows) {
       db.transaction((rs) => {
         db.prepare("DELETE FROM skips").run();
         for (const r of rs) {
-          stmt.run(
-            String(r.id), r.streakId, r.type || "skip", r.days || 0,
-            String(r.startDate || "").slice(0, 10),
-            String(r.endDate || "").slice(0, 10),
-            r.reason || "", r.createdAt || ""
-          );
+          stmt.run(String(r.id), r.streakId, r.type || "skip", r.days || 0, String(r.startDate || "").slice(0, 10), String(r.endDate || "").slice(0, 10), r.reason || "", r.createdAt || "");
         }
       })(rows);
     }
@@ -137,13 +127,7 @@ function unpackCollection(table, rows) {
       db.transaction((rs) => {
         db.prepare("DELETE FROM pauses").run();
         for (const r of rs) {
-          stmt.run(
-            String(r.id),
-            String(r.startTime || r.date || "").slice(0, 10),
-            r.startTime || null,
-            r.endTime || null,
-            r.active ? 1 : 0
-          );
+          stmt.run(String(r.id), String(r.startTime || r.date || "").slice(0, 10), r.startTime || null, r.endTime || null, r.active ? 1 : 0);
         }
       })(rows);
     }
@@ -185,8 +169,6 @@ function kvWrite(key, rawValue) {
     s[key] = String(rawValue);
     writeStore(s);
   }
-
-  // Unpack relational
   try {
     if (key === "habitOS_v4_final") {
       const st = JSON.parse(String(rawValue));
@@ -233,7 +215,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false, // needs false for better-sqlite3 in main, true for renderer is ok
+      sandbox: false,
     }
   });
 
@@ -242,30 +224,20 @@ function createWindow() {
     win.webContents.openDevTools({ mode: "detach" });
   } else {
     win.loadFile(path.join(__dirname, "../dist/renderer/index.html"));`n    win.webContents.openDevTools();
-    win.webContents.openDevTools(); // <- ADD THIS LINE FOR DEBUG
+    win.webContents.openDevTools(); // DEBUG: remove after black screen fixed
   }
 
   win.once('ready-to-show', () => win.show());
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: "deny" }; });
-
   win.on('closed', () => { win = null; });
-
   return win;
 }
 
-// --- Single whenReady ---
 app.whenReady().then(() => {
   const ses = session.defaultSession;
-
-  // 1. Always allow mic + media
-  ses.setPermissionRequestHandler((webContents, permission, callback) => {
-    // allow all for this app - you can narrow to 'media' / 'microphone' later
-    callback(true);
-  });
+  ses.setPermissionRequestHandler((webContents, permission, callback) => callback(true));
   ses.setPermissionCheckHandler(() => true);
   ses.setDevicePermissionHandler(() => true);
-
-  // 2. Strip CSP so AudioWorklet blob + vosk model tar.gz can load
   ses.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders };
     delete headers['Content-Security-Policy'];
@@ -273,18 +245,14 @@ app.whenReady().then(() => {
     delete headers['Content-Security-Policy-Report-Only'];
     callback({ responseHeaders: headers });
   });
-
-  // 3. macOS mic prompt
   try {
     if (process.platform === 'darwin' && systemPreferences.askForMediaAccess) {
       systemPreferences.askForMediaAccess('microphone');
     }
   } catch {}
-
   handleCoreScheme();
   openDb();
   createWindow();
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -301,7 +269,6 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-// --- IPC ---
 ipcMain.handle("db:hydrate", () => kvReadAll());
 ipcMain.handle("db:write", (_e, { key, value }) => kvWrite(key, value));
 ipcMain.handle("db:export", () => {
@@ -334,7 +301,6 @@ ipcMain.handle("db:info", () => {
   return { driver: db ? "sqlite" : "json-file", path: db ? path.join(app.getPath("userData"), "habit.db") : jsonFile, size };
 });
 
-/** Wipes every habit collection (SQLite + JSON fallback). Used by "Reset & re-onboard". */
 ipcMain.handle("db:reset", () => {
   try {
     if (db) {
@@ -354,11 +320,9 @@ ipcMain.handle("db:reset", () => {
   }
 });
 
-// --- offline voice assets ---
 ipcMain.handle("voice:model-path", () => {
   const p = findCoreFile("habi-model.tar.gz") || findCoreFile("vosk-model-small-en-us-0.15.tar.gz");
   if (!p) return "";
-  // serve through the privileged scheme so a file:// renderer can fetch() it
   for (const root of coreRoots()) {
     if (p.startsWith(root)) return "habicore://habit" + "/" + path.relative(root, p).split(path.sep).join("/");
   }
