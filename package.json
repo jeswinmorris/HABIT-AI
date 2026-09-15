@@ -50,36 +50,23 @@
   "appId": "com.habitai.app",
   "productName": "HABIT.AI",
   "asar": true,
-  "asarUnpack": [
-    "**/node_modules/better-sqlite3/**/*"
-  ],
+  "asarUnpack": ["**/node_modules/better-sqlite3/**/*"],
   "files": [
     "dist/renderer/**/*",
     "electron/**/*",
     "package.json"
   ],
   "extraResources": [
-    {
-      "from": "public",
-      "to": ".",
-      "filter": ["**/*"]
-    }
+    { "from": "public", "to": ".", "filter": ["**/*"] }
   ],
   "mac": {
-    "target": [
-      {
-        "target": "dmg",
-        "arch": ["x64"]
-      }
-    ],
+    "target": [{ "target": "dmg", "arch": ["x64"] }],
     "minimumSystemVersion": "10.13.0",
     "category": "public.app-category.productivity"
   },
-  "win": {
-    "target": ["nsis"]
-  },
+  "win": { "target": ["nsis"] },
   "directories": {
-    "output": "dist/installers",
+    "output": "release",
     "buildResources": "public"
   }
 }
