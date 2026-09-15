@@ -1,4 +1,4 @@
-﻿name: Build
+name: Build
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: mac-dmg
-          path: dist/*.dmg
+          path: dist/installers/*.dmg
 
   build-win:
     runs-on: windows-latest
@@ -33,4 +33,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: win-exe
-          path: dist/*.exe
+          path: dist/installers/*.exe
