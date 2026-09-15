@@ -8,6 +8,7 @@ const path = require("path");
 const fs = require("fs");
 
 let win = null;
+app.disableHardwareAcceleration();
 let db = null;
 let jsonFile = null;
 
@@ -240,7 +241,8 @@ function createWindow() {
     win.loadURL("http://localhost:5173");
     win.webContents.openDevTools({ mode: "detach" });
   } else {
-    win.loadFile(path.join(__dirname, "../dist/index.html"));
+    win.loadFile(path.join(__dirname, "../dist/renderer/index.html"));`n    win.webContents.openDevTools();
+    win.webContents.openDevTools(); // <- ADD THIS LINE FOR DEBUG
   }
 
   win.once('ready-to-show', () => win.show());
