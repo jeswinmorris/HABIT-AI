@@ -11,7 +11,6 @@ const fs = require("fs");
 app.disableHardwareAcceleration();
 
 let win = null;
-app.disableHardwareAcceleration();
 let db = null;
 let jsonFile = null;
 
@@ -223,7 +222,7 @@ function createWindow() {
     win.loadURL("http://localhost:5173");
     win.webContents.openDevTools({ mode: "detach" });
   } else {
-    win.loadFile(path.join(__dirname, "../dist/renderer/index.html"));`n    win.webContents.openDevTools();
+    win.loadFile(path.join(__dirname, "../dist/renderer/index.html"));
     win.webContents.openDevTools(); // DEBUG: remove after black screen fixed
   }
 
