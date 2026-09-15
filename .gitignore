@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-electron/
+release/
+public/habi-model.tar.gz
+public/piper/
+*.log
+.playwright-cli/
