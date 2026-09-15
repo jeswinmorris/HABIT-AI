@@ -46,58 +46,24 @@
     "vite": "^5.0.0",
     "wait-on": "^7.2.0"
   },
-  "build": {
-    "appId": "com.errorfreakz.habitos",
-    "productName": "HABIT.AI",
-    "asar": true,
-    "asarUnpack": [
-      "**/*.node",
-      "**/habi-model.tar.gz",
-      "**/*.tar.gz",
-      "**/node_modules/better-sqlite3/**/*"
+ "build": {
+  "appId": "com.habitai.app",
+  "productName": "HABIT.AI",
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64"]
+      }
     ],
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "public/**/*",
-      "!**/*.ts",
-      "!**/*.map"
-    ],
-    "directories": {
-      "buildResources": "build"
-    },
-    "win": {
-      "icon": "build/icon.ico",
-      "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "msi", "arch": ["x64"] }
-      ]
-    },
-    "mac": {
-      "icon": "build/icon.icns",
-      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
-      "category": "public.app-category.productivity"
-    },
-    "linux": {
-      "icon": "build/icon.png",
-      "target": "AppImage"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "artifactName": "HABIT.AI-Setup-${version}.${ext}"
-    },
-    "msi": {
-      "oneClick": false,
-      "perMachine": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "artifactName": "HABIT.AI-${version}.${ext}"
-    },
-    "dmg": {
-      "sign": false,
-      "artifactName": "HABIT.AI-${version}.${ext}"
-    }
+    "minimumSystemVersion": "10.13.0",
+    "category": "public.app-category.productivity"
+  },
+  "win": {
+    "target": ["nsis"]
+  },
+  "directories": {
+    "output": "dist"
   }
+}
 }
