@@ -223,7 +223,7 @@ function createWindow() {
     win.webContents.openDevTools({ mode: "detach" });
   } else {
     win.loadFile(path.join(__dirname, "../dist/renderer/index.html"));
-    win.webContents.openDevTools(); // DEBUG: remove after black screen fixed
+    
   }
 
   win.once('ready-to-show', () => win.show());
