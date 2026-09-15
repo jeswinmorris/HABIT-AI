@@ -46,9 +46,25 @@
     "vite": "^5.0.0",
     "wait-on": "^7.2.0"
   },
- "build": {
+  "build": {
   "appId": "com.habitai.app",
   "productName": "HABIT.AI",
+  "asar": true,
+  "asarUnpack": [
+    "**/node_modules/better-sqlite3/**/*"
+  ],
+  "files": [
+    "dist/renderer/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "public",
+      "to": ".",
+      "filter": ["**/*"]
+    }
+  ],
   "mac": {
     "target": [
       {
@@ -63,7 +79,8 @@
     "target": ["nsis"]
   },
   "directories": {
-    "output": "dist"
+    "output": "dist/installers",
+    "buildResources": "public"
   }
 }
 }
